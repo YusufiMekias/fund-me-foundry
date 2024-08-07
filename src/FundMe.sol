@@ -7,6 +7,7 @@ pragma solidity ^0.8.18;
 
 
 //interface for recieving price feeds 
+import {AggregatorV3Interface} from "../lib/chainlink-brownie-contracts/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {PriceConverter} from "./PriceConverter.sol";
 
 // solhint-disable-next-line interface-starts-with-i
@@ -23,11 +24,14 @@ contract FundMe {
 
     uint256 public constant MINIMUM_USD = 5e18;
     address[] public funders;
-    mapping(address funder => uint256 amountFunded) public addressToAmountFunded;
-    address public immutable owner;
+    mapping(address funder => uint256 amountFunded) private addressToAmountFunded;
+    address private immutable owner;
+    AggregatorV3Interface private s_priceFeed;
+    
 
-    constructor( ) {
+    constructor(address price_feed_a) {
         owner = msg.sender;
+        s_priceFeed = AggregatorV3Interface(price_feed_a);
     }
 
     function fund() public payable{
@@ -69,12 +73,33 @@ contract FundMe {
             revert CallFailed();
         }
     }
+    function getCurrentPrice() public view returns (int256){
+        (, int256 price,,,) = s_priceFeed.latestRoundData();
+        return price;
+    }
     receive() external payable{
         fund();
     }
     fallback() external payable{
         fund();
     }
+    function getAddressToAmountFunded(address fundingAddress) public view returns(uint256){
+        return addressToAmountFunded[fundingAddress];
+    }
+    function getVersion() public view returns(uint256){
+        return s_priceFeed.version();
+    }
+    function getFunder(uint256 index) public view returns(address){
+        return funders[index];
+    }
+    function getOwner() public view returns(address){
+        return owner;
+    }
+    function getPriceFeed() public view returns (AggregatorV3Interface){
+        return s_priceFeed;
+
+    }
+
     modifier onlyOwner() {
         if(msg.sender != owner){
             revert NotOwner();

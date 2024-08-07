@@ -5,7 +5,7 @@ import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/s
 
 library PriceConverter {
     function getPrice() internal view returns (uint256) {
-        //Address 0x694AA1769357215DE4FAC081bf1f309aDC325306
+        //Address 0x694AA1769357215DE4FAC081bf1f309aDC325306 eth/usd chainlink price feed
         //ABI
         AggregatorV3Interface priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
         (, int256 price,,,) = priceFeed.latestRoundData();
@@ -17,7 +17,7 @@ library PriceConverter {
         return ethAmountInUsd;
 
     }
-    function getVersion() internal view returns (uint256){
-        return AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306).version();
-    }
+    // function getVersion() internal view returns (uint256){
+    //     return AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306).version();
+    // }
 }
