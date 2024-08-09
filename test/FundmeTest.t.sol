@@ -6,8 +6,11 @@ pragma solidity ^0.8.18;
 
 //import {Vm} from "../lib/forge-std/src/vm.sol";
 //import {StdAssertions} from "../lib/forge-std/src/StdAssertions.sol";
-import {Test, console} from "../lib/forge-std/src/Test.sol";
+import {Test} from "../lib/forge-std/src/Test.sol";
+import {console} from "../lib/forge-std/src/console.sol";
 import {FundMe} from "../src/FundMe.sol";
+
+import {DeployFundMe} from "../script/DeployFundMe.s.sol";
 
 
 
@@ -21,32 +24,24 @@ import {FundMe} from "../src/FundMe.sol";
 //4. staging
 //      testing our code in a real environment that is not prod
 
-contract FundMeTest is Test {
+contract FundMeTest is Test{
     FundMe fundme;
     uint256 number;
     uint256 minUSD;
     function setUp() external {
-        fundme = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
-        number = 2;
+        DeployFundMe deployFundMe = new DeployFundMe();
+        fundme = deployFundMe.run();
 
     }
     function testMinDollarIs5() public view {
         console.log(minUSD);
-        assertEq(fundme.MINIMUM_USD(),5e18);
+        assertEq(fundme.MINIMUM_USD(),5);
     }
     function testOwnerIsMsgSender() public view {
 
         //IMPORTANT: when checking ownership be midnful of the order in which contracts call eachother.
-        //msg.sender is not the right thing to compare to to test ownership, the incorrect code will be left here commented
-        //out to show this example
-        //CORRECT way to do this is if the current contract is the "owner" then compare msg.sender to "address(this)"
-        //INCORRECT WAY ----->
-        // console.log(fundme.owner());
-        // console.log(msg.sender);
-        // assertEq(fundme.owner(), msg.sender);
 
-        //CORRECT WAY +++++>
-        assertEq(fundme.getOwner(),address(this));
+        assertEq(fundme.getOwner(),msg.sender);
     }
 
     //testing accuracy of price feeds
@@ -57,7 +52,19 @@ contract FundMeTest is Test {
         assertEq(version , 4);
     }
     function testPriceFeedData() public view{
-        int256 price = fundme.getCurrentPrice();
+        uint256 price = fundme.getCurrentPrice();
         console.log(price);
+    }
+    function testFundFailsWithoutEnoughEth() public{
+        vm.expectRevert();
+        fundme.fund{value:10e2}();
+    }
+    function testFundUpdatesFundedDataStructure() public{
+        fundme.fund{value:10e18}();
+        // console.log(fundme.getAddressToAmountFunded(address(this)));
+        uint256 amountFunded = fundme.getAddressToAmountFunded(address(this));
+        assertEq(amountFunded,10e18);
+        
+
     }
 }   
